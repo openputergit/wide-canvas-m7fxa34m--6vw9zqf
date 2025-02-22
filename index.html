@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WealthManagementAI Assistant</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        .neubrutalism {
+            border: 3px solid #000;
+            box-shadow: 5px 5px 0px #000;
+            transition: all 0.2s ease;
+        }
+        .neubrutalism:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0px #000;
+        }
+        .chat-container {
+            height: calc(100vh - 180px);
+        }
+        .message {
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .upload-zone {
+            border: 3px dashed #000;
+            transition: all 0.3s ease;
+        }
+        .upload-zone:hover {
+            background: #f0f0f0;
+            border-color: #0066cc;
+        }
+        .typing-indicator::after {
+            content: '...';
+            animation: typing 1s infinite;
+        }
+        @keyframes typing {
+            0% { content: '.'; }
+            33% { content: '..'; }
+            66% { content: '...'; }
+        }
+    </style>
+</head>
+<body class="bg-[#f5f5f5]">
+    <div id="app">
+        <nav class="bg-white neubrutalism m-4 p-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <img src="https://via.placeholder.com/40x40/0066cc/ffffff?text=AI" alt="Logo" class="neubrutalism">
+                    <h1 class="text-2xl font-bold">WealthManagementAI</h1>
+                </div>
+                <div class="flex gap-4">
+                    <button class="neubrutalism bg-[#e6f3ff] px-4 py-2">
+                        <i class="bi bi-question-circle me-2"></i>Help
+                    </button>
+                    <button class="neubrutalism bg-[#0066cc] text-white px-4 py-2">
+                        <i class="bi bi-person-circle me-2"></i>Login
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <main class="container mx-auto px-4">
+            <div class="neubrutalism bg-white p-4">
+                <div class="chat-container flex flex-col">
+                    <!-- Chat Messages -->
+                    <div class="flex-1 overflow-y-auto p-4 space-y-4" ref="chatContainer">
+                        <div v-for="(message, index) in messages" :key="index">
+                            <!-- User Message -->
+                            <div v-if="message.type === 'user'" class="flex justify-end mb-4">
+                                <div class="message neubrutalism bg-[#0066cc] text-white p-3 rounded-lg">
+                                    {{ message.content }}
+                                </div>
+                            </div>
+                            <!-- AI Message -->
+                            <div v-else class="flex mb-4">
+                                <div class="message neubrutalism bg-[#e6f3ff] p-3 rounded-lg">
+                                    <div v-html="message.content"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Typing Indicator -->
+                        <div v-if="isTyping" class="flex mb-4">
+                            <div class="message neubrutalism bg-[#e6f3ff] p-3 rounded-lg">
+                                <span class="typing-indicator">AI is typing</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input Area -->
+                    <div class="border-t-2 p-4">
+                        <div class="flex gap-4">
+                            <!-- File Upload -->
+                            <div class="upload-zone p-2 rounded cursor-pointer" @click="triggerFileUpload">
+                                <i class="bi bi-paperclip text-xl"></i>
+                                <input type="file" id="fileUpload" class="hidden" accept=".pdf,.docx" @change="handleFileUpload">
+                            </div>
+                            <!-- Message Input -->
+                            <input type="text" v-model="newMessage" 
+                                   @keyup.enter="sendMessage"
+                                   placeholder="Type your message here..." 
+                                   class="neubrutalism flex-1 p-3">
+                            <!-- Send Button -->
+                            <button @click="sendMessage" 
+                                    class="neubrutalism bg-[#0066cc] text-white px-6 py-2">
+                                <i class="bi bi-send"></i>
+                            </button>
+                        </div>
+                        <!-- Suggested Actions -->
+                        <div class="flex gap-2 mt-4">
+                            <button v-for="suggestion in suggestions" 
+                                    @click="usesuggestion(suggestion)"
+                                    class="neubrutalism bg-[#e6f3ff] px-3 py-1 text-sm">
+                                {{ suggestion }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const { createApp } = Vue
+
+        createApp({
+            data() {
+                return {
+                    messages: [
+                        {
+                            type: 'ai',
+                            content: 'Hello! I\'m your WealthManagement Assistant. How can I help you today?'
+                        }
+                    ],
+                    newMessage: '',
+                    isTyping: false,
+                    suggestions: [
+                        'Upload Document',
+                        'Show Process Steps',
+                        'Need Help'
+                    ]
+                }
+            },
+            methods: {
+                sendMessage() {
+                    if (this.newMessage.trim()) {
+                        // Add user message
+                        this.messages.push({
+                            type: 'user',
+                            content: this.newMessage
+                        })
+
+                        // Show typing indicator
+                        this.isTyping = true
+
+                        // Simulate AI response
+                        setTimeout(() => {
+                            this.isTyping = false
+                            this.messages.push({
+                                type: 'ai',
+                                content: this.generateResponse(this.newMessage)
+                            })
+                            this.$nextTick(() => {
+                                this.scrollToBottom()
+                            })
+                        }, 1500)
+
+                        this.newMessage = ''
+                        this.$nextTick(() => {
+                            this.scrollToBottom()
+                        })
+                    }
+                },
+                scrollToBottom() {
+                    const chatContainer = this.$refs.chatContainer
+                    chatContainer.scrollTop = chatContainer.scrollHeight
+                },
+                generateResponse(message) {
+                    if (message.toLowerCase().includes('process') || message.toLowerCase().includes('step')) {
+                        return `Here are the steps for your request:<br>
+                                1. Navigate to Settings<br>
+                                2. Select 'Account Management'<br>
+                                3. Click on 'Process Request'<br>
+                                4. Follow the on-screen instructions`
+                    }
+                    return "I understand your question. Let me help you with that. Would you like me to provide more specific information?"
+                },
+                triggerFileUpload() {
+                    document.getElementById('fileUpload').click()
+                },
+                handleFileUpload(event) {
+                    const file = event.target.files[0]
+                    this.messages.push({
+                        type: 'user',
+                        content: `Uploaded: ${file.name}`
+                    })
+                    setTimeout(() => {
+                        this.messages.push({
+                            type: 'ai',
+                            content: `I've received your file "${file.name}". I'm analyzing it now. Would you like me to extract specific information or provide a summary?`
+                        })
+                        this.$nextTick(() => {
+                            this.scrollToBottom()
+                        })
+                    }, 1000)
+                },
+                usesuggestion(suggestion) {
+                    this.newMessage = suggestion
+                    this.sendMessage()
+                }
+            },
+            mounted() {
+                this.scrollToBottom()
+            }
+        }).mount('#app')
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
